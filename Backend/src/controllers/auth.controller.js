@@ -1,6 +1,8 @@
 const usermodel=require("../models/user.model");
 const bcrypt=require("bcryptjs");
 const jwt = require("jsonwebtoken");  
+// const blacklistmodel = require("../models/blacklist.model");
+const redis=require('../config/cache')
 
 async function register(req, res) {
     const { username, email, password } = req.body;
@@ -37,7 +39,7 @@ async function login(req, res) {
     const { email, password,username } = req.body;
     const user = await usermodel.findOne({
         $or:[{username},{email}]
-    })
+    }).select("+password")
 
     if(!user){
         return res.status(400).json({message:"Invalid credentials"})
@@ -61,4 +63,22 @@ async function login(req, res) {
     });
 }
 
-module.exports = {register,login}
+async function getMe(req, res) {
+    const user = await usermodel.findById(req.user.id)
+    res.status(200).json({
+        message:"User fetched successfully",user
+    })
+    
+}
+
+async function logout(req, res) {
+    const token = req.cookies.token;
+
+    res.clearCookie("token");
+    // await blacklistmodel.create({token})
+    await redis.set(token, Date.now().toString(),"EX",60*60);
+    
+    res.status(200).json({message:"Logout successful"})
+}
+
+module.exports = {register,login,getMe,logout}
