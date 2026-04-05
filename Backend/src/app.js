@@ -8,6 +8,9 @@ app.use(cors({
     credentials: true,
 }));
 
+const songRouter=require("./routes/song.routes");
+app.use("/api/songs",songRouter);
+
 app.use(express.json());
 
 const authRoutes = require("./routes/auth.routes");
